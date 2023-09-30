@@ -1,0 +1,200 @@
+function findAndCountColors2(message) {
+  // Определение текущей даты
+  
+var currentMonth = new Date().getMonth(); // Получаем текущий месяц (0 - Январь, 1 - Февраль, и так далее)
+var currentYear = new Date().getFullYear(); // Получаем текущий год
+var months = [
+  "Январь", "Февраль", "Март", "Апрель", "Май", "Июнь",
+  "Июль", "Август", "Сентябрь", "Октябрь", "Ноябрь", "Декабрь"
+];
+var previousMonth = currentMonth === 0 ? 11 : currentMonth - 1; // Предыдущий месяц
+var previousMonthName = months[previousMonth]; // Имя предыдущего месяца
+var sheetName1 = "Опт " + previousMonthName + " " + currentYear; // Лист с предыдущим месяцем
+var sheetName2 = "Опт " + currentMonthName + " " + currentYear; // Лист с текущим месяцем
+  var yslov = "28.08.23-01.08.23";
+  
+  // Переформатируем даты в нужный вид
+  var formattedDates = yslov.split('-').map(function(date) {
+    var parts = date.split('.');
+    return parts[1] + '/' + parts[0] + '/20' + parts[2];
+  });
+  
+  // Обновляем yslov
+  yslov = formattedDates.join('-');
+  
+  // Разбиваем диапазон yslov на начальную и конечную дату
+  var dateRange = yslov.split("-");
+  var startDate = new Date(dateRange[0]);
+  var endDate = new Date(dateRange[1]);
+
+  // Генерация названия листа
+  var currentMonthName = getMonthName(currentMonth); // Функция для получения названия месяца
+
+  
+  var spreadsheet = SpreadsheetApp.openById("1HNpeWaJB4BmMO5w1jouCW9afAQCWtdI74MKePFqCA0c");
+  
+  // Проверка условия на листе "Опт Август 2023"
+  var sheet2 = spreadsheet.getSheetByName(sheetName2);
+  var dataRange2 = sheet2.getRange("B:E").getValues();
+  var dateColumn2 = sheet2.getRange("A:A").getValues();
+  
+  var startIndex2 = -1;
+  var endIndex2 = -1;
+
+  // Поиск начала и конца диапазона в столбце A на листе "Опт Август 2023"
+  for (var i = 0; i < dateColumn2.length; i++) {
+    if (dateColumn2[i][0] instanceof Date) {
+      var currentDate2 = dateColumn2[i][0];
+      if (currentDate2 >= startDate && currentDate2 <= endDate) {
+        if (startIndex2 === -1) {
+          startIndex2 = i;
+        }
+        endIndex2 = i;
+      } else if (currentDate2 > endDate) {
+        break; // Выходим из цикла, если дата превышает endDate
+      }
+    }
+  }
+  
+  // Если условие выполнено на листе "Опт Август 2023", выполняем поиск и подсчет на этом листе
+  if (startIndex2 !== -1 && endIndex2 !== -1) {
+    var newmassiv2 = [];
+    
+    for (var j = startIndex2; j <= endIndex2; j++) {
+      var currentDate2 = dateColumn2[j][0];
+      var cellA2 = dateColumn2[j][0];
+      var cellB2 = dataRange2[j][0]; // Используем dataRange для столбца B
+
+      // Проверяем, если предыдущая строка содержит дату или текущая строка пустая, пропускаем текущую
+      if (dateColumn2[j][0] instanceof Date) {
+        if (j > 0) {
+          newmassiv2.pop(); // Удаляем предыдущую строку из newmassiv2
+        }
+        continue; // Пропускаем текущую строку
+      }
+
+      var quantities2 = dataRange2.map(function(row) { return [row[3]]; });
+      if (cellA2 == "" && cellB2 != "") {
+        newmassiv2.push([cellB2, quantities2[j][0]]);
+      }
+    }
+    
+    var countMap2 = {};
+    var sumMap2 = {};
+    
+    for (var k = 0; k < newmassiv2.length; k++) {
+      if (newmassiv2[k][0].indexOf("STH") !== -1) {
+        newmassiv2[k][0] = newmassiv2[k][0].replace(/^.*?\s/, ''); // Заменяем первое слово на пустую строку
+      }
+    }
+    
+    for (var l = 0; l < newmassiv2.length; l++) {
+      var key2 = newmassiv2[l][0].trim(); // Избегаем пробелов в начале и в конце
+      var quantity2 = Number(newmassiv2[l][1]);
+      
+      if (key2 in countMap2) {
+        countMap2[key2]++;
+        sumMap2[key2] += quantity2;
+      } else {
+        countMap2[key2] = 1;
+        sumMap2[key2] = quantity2;
+      }
+    }
+    
+    var sortedCounts2 = Object.keys(countMap2).sort(function(a, b) {
+       return countMap2[b] - countMap2[a];
+    });
+    var message2 = "Топ по запросу на листе 'Опт Август 2023':\n";
+    for (var m = 0; m < Math.min(sortedCounts2.length, 20); m++) {
+      if (sortedCounts2[m].trim() !== "") { // Проверка на пустую строку
+        message2 += sortedCounts2[m] + ": " + countMap2[sortedCounts2[m]] + " раз | " + sumMap2[sortedCounts2[m]] + "шт\n";
+      }
+    }
+    
+    Logger.log(message2);
+    return;
+  }
+  
+  // Если условие не выполнено на листе "Опт Август 2023", выполняем поиск и подсчет на текущем листе
+  var sheet1 = spreadsheet.getSheetByName(sheetName1);
+  var dataRange1 = sheet1.getRange("B:E").getValues();
+  var dateColumn1 = sheet1.getRange("A:A").getValues();
+  
+  var startIndex1 = -1;
+  var endIndex1 = -1;
+
+  // Поиск начала и конца диапазона в столбце A на текущем листе
+  for (var n = 0; n < dateColumn1.length; n++) {
+    if (dateColumn1[n][0] instanceof Date) {
+      var currentDate1 = dateColumn1[n][0];
+      if (currentDate1 >= startDate && currentDate1 <= endDate) {
+        if (startIndex1 === -1) {
+          startIndex1 = n;
+        }
+        endIndex1 = n;
+      } else if (currentDate1 > endDate) {
+        break; // Выходим из цикла, если дата превышает endDate
+      }
+    }
+  }
+  
+  // Если условие выполнено на текущем листе, выполняем поиск и подсчет на этом листе
+  if (startIndex1 !== -1 && endIndex1 !== -1) {
+    var newmassiv1 = [];
+    
+    for (var p = startIndex1; p <= endIndex1; p++) {
+      var currentDate1 = dateColumn1[p][0];
+      var cellA1 = dateColumn1[p][0];
+      var cellB1 = dataRange1[p][0]; // Используем dataRange для столбца B
+
+      // Проверяем, если предыдущая строка содержит дату или текущая строка пустая, пропускаем текущую
+      if (dateColumn1[p][0] instanceof Date) {
+        if (p > 0) {
+          newmassiv1.pop(); // Удаляем предыдущую строку из newmassiv1
+        }
+        continue; // Пропускаем текущую строку
+      }
+
+      var quantities1 = dataRange1.map(function(row) { return [row[3]]; });
+      if (cellA1 == "" && cellB1 != "") {
+        newmassiv1.push([cellB1, quantities1[p][0]]);
+      }
+    }
+    
+    var countMap1 = {};
+    var sumMap1 = {};
+    
+    for (var q = 0; q < newmassiv1.length; q++) {
+      if (newmassiv1[q][0].indexOf("STH") !== -1) {
+        newmassiv1[q][0] = newmassiv1[q][0].replace(/^.*?\s/, ''); // Заменяем первое слово на пустую строку
+      }
+    }
+    
+    for (var r = 0; r < newmassiv1.length; r++) {
+      var key1 = newmassiv1[r][0].trim(); // Избегаем пробелов в начале и в конце
+      var quantity1 = Number(newmassiv1[r][1]);
+      
+      if (key1 in countMap1) {
+        countMap1[key1]++;
+        sumMap1[key1] += quantity1;
+      } else {
+        countMap1[key1] = 1;
+        sumMap1[key1] = quantity1;
+      }
+    }
+    
+    var sortedCounts1 = Object.keys(countMap1).sort(function(a, b) {
+      return countMap1[b] - countMap1[a];
+    });
+
+    var message1 = "Топ по запросу на текущем листе:\n";
+    for (var s = 0; s < Math.min(sortedCounts1.length, 20); s++) {
+      if (sortedCounts1[s].trim() !== "") { // Проверка на пустую строку
+        message1 += sortedCounts1[s] + ": " + countMap1[sortedCounts1[s]] + " раз | " + sumMap1[sortedCounts1[s]] + "шт\n";
+      }
+    }
+    
+    Logger.log(message1);
+    return;
+  }
+}
